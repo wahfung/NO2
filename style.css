@@ -1,0 +1,38 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #050510; /* Deep dark blue/black */
+  font-family: 'Times New Roman', serif;
+  color: #d4af37; /* Gold */
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+canvas {
+  display: block;
+}
+
+#loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  letter-spacing: 0.2rem;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+
+#instruction {
+  position: absolute;
+  bottom: 30px;
+  width: 100%;
+  text-align: center;
+  font-size: 1.2rem;
+  opacity: 0.8;
+  pointer-events: none;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+}
