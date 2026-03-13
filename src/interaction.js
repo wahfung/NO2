@@ -7,31 +7,33 @@ let rotationVelocity = 0;
 const FRICTION = 0.95;
 const ROTATION_SENSITIVITY = 0.005;
 
-// Raycaster
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
+let time = 0;
+
 export function updateInteraction(scene, camera, cardGroup) {
-    // 1. Handle Rotation
+    time += 0.016;
+
     if (handState.isPresent) {
-        // Add velocity based on hand movement
-        // handState.velocity is usually around -2 to 2 range maybe?
-        // We dampen it
         rotationVelocity += handState.velocity * ROTATION_SENSITIVITY;
     }
 
-    // Apply physics
     rotationVelocity *= FRICTION;
     cardGroup.rotation.y += rotationVelocity;
 
-    // 2. Raycasting
+    updateDynamicLights(scene, time);
+
+    if (drawnCard) {
+        updateCardHolographicEffect(drawnCard, time);
+    }
+
     mouse.x = handState.cursor.x;
     mouse.y = handState.cursor.y;
     raycaster.setFromCamera(mouse, camera);
 
     const intersects = raycaster.intersectObjects(cardGroup.children, false);
 
-    // Reset scales
     cardGroup.children.forEach(card => {
         if (card !== drawnCard) {
             gsap.to(card.scale, { x: 1, y: 1, z: 1, duration: 0.3 });
@@ -46,21 +48,14 @@ export function updateInteraction(scene, camera, cardGroup) {
         }
     }
 
-    // 3. Draw / Return Logic
-    // 3. Draw / Return Logic
     const cursorVisual = document.getElementById('cursor-visual');
     if (cursorVisual) {
         if (handState.isPresent) {
             cursorVisual.style.opacity = '1';
-            // Convert normalized coords to screen pixels
             const px = (handState.cursor.x + 1) / 2 * window.innerWidth;
             const py = (-handState.cursor.y + 1) / 2 * window.innerHeight;
-            // Use left/top for positioning
             cursorVisual.style.left = `${px}px`;
             cursorVisual.style.top = `${py}px`;
-            // Remove transform if present from previous frame? No, left/top handles position. 
-            // Ensure no conflicting transform logic. Main.js sets initial transform: translate(-50%, -50%). 
-            // This centers the cursor on the point (px, py).
             cursorVisual.style.transform = `translate(-50%, -50%)`;
             cursorVisual.style.backgroundColor = handState.isPinching ? 'red' : 'gold';
         } else {
@@ -69,49 +64,48 @@ export function updateInteraction(scene, camera, cardGroup) {
     }
 
     if (handState.isPinching && targetCard && !drawnCard) {
-        drawCard(targetCard);
+        drawCard(targetCard, scene);
     } else if (!handState.isPinching && drawnCard) {
         returnCard();
     }
 }
 
-function drawCard(card) {
+function updateDynamicLights(scene, time) {
+    const light1 = scene.getObjectByName('dynamicLight1');
+    const light2 = scene.getObjectByName('dynamicLight2');
+    
+    if (light1) {
+        light1.position.x = Math.sin(time * 0.5) * 8;
+        light1.position.z = Math.cos(time * 0.5) * 8 - 5;
+        light1.intensity = 1.5 + Math.sin(time * 2) * 0.5;
+    }
+    
+    if (light2) {
+        light2.position.x = Math.sin(time * 0.5 + Math.PI) * 8;
+        light2.position.z = Math.cos(time * 0.5 + Math.PI) * 8 - 5;
+        light2.intensity = 1.5 + Math.cos(time * 2) * 0.5;
+    }
+}
+
+function updateCardHolographicEffect(card, time) {
+    if (card.material && Array.isArray(card.material)) {
+        const frontMaterial = card.material[5];
+        if (frontMaterial && frontMaterial.iridescence !== undefined) {
+            frontMaterial.iridescence = 0.3 + Math.sin(time * 3) * 0.2;
+            frontMaterial.iridescenceThicknessRange = [
+                100 + Math.sin(time * 2) * 50,
+                400 + Math.cos(time * 2) * 100
+            ];
+        }
+    }
+}
+
+function drawCard(card, scene) {
     if (card.userData.isAnimating) return;
     drawnCard = card;
     card.userData.isAnimating = true;
 
-    // Convert world position to local to camera... actually:
-    // We want to bring it in front of the camera.
-    // Simplest: Parent it to camera? Or just move it to camera local space world pos.
-
-    // Let's animate position to a fixed point in front of camera
-    // Camera is at 0,0,0 facing -Z (default) or set in scene.js
-    // scene.js: camera.position.set(0, 0, 0); BUT cards are surrounding it.
-    // If cards surround (0,0,0), then camera looks at them.
-    // Wait, if camera is at (0,0,0), looking at -Z?
-    // Cards are at radius.
-    // We want to bring card close to camera.
-
-    // Actually, let's just move it to (0, 0, -5) relative to camera rotation?
-    // Since camera doesn't move/rotate (the ring rotates), we can just move card to (0, 0, -8).
-    // And rotate it to face camera.
-
-    // We need to change coordinate space or just animate world position.
-    // Since camera is static at 0,0,0, (0,0,-8) is always "in front" if camera looks -Z.
-    // But wait, setupScene() didn't specify lookAt. Default is look -Z.
-    // So yes.
-
-    // Store original world transform (which effectively is `originalPos` rotated by group.rotation)
-    // Wait, the card is child of `group`. `group` is rotating.
-    // If we move the card while it is child of group, it will keep rotating with group.
-    // We should `scene.attach(card)` to detach it from group but keep world transform, then animate.
-
     card.parent.remove(card);
-    const scene = card.parent ? card.parent : window.sceneInstance; // Hacky access?
-    // Better: loop up to scene.
-    // Assume main.js passes scene.
-    // For now, let's attach to scene root.
-    // But three.js `attach` handles the transform calculation.
     window.sceneInstance.attach(card);
 
     gsap.to(card.position, {
@@ -124,22 +118,17 @@ function drawCard(card) {
 
     gsap.to(card.rotation, {
         x: 0,
-        y: Math.PI, // Face camera
+        y: Math.PI,
         z: 0,
         duration: 1
     });
+
+    animateCardGlow(card, true);
 }
 
 function returnCard() {
     if (!drawnCard) return;
     const card = drawnCard;
-
-    // Re-attach to group?
-    // If we re-attach, position becomes local.
-    // We want to animate BACK to the slot in the ring.
-    // The slot is rotating.
-    // Easier: Animate purely in world space to where the slot IS right now?
-    // No, easier to attach back to group immediately, and animate local position to originalPos.
 
     window.cardGroupInstance.attach(card);
 
@@ -152,6 +141,7 @@ function returnCard() {
         onComplete: () => {
             card.userData.isAnimating = false;
             drawnCard = null;
+            animateCardGlow(card, false);
         }
     });
 
@@ -162,6 +152,33 @@ function returnCard() {
         duration: 1
     });
 
-    // Reset reference immediately so we don't call return again
     drawnCard = null;
+}
+
+function animateCardGlow(card, isDrawn) {
+    if (card.material && Array.isArray(card.material)) {
+        const frontMaterial = card.material[5];
+        const backMaterial = card.material[4];
+        
+        if (frontMaterial) {
+            gsap.to(frontMaterial, {
+                envMapIntensity: isDrawn ? 3.5 : 2.0,
+                duration: 0.5
+            });
+            
+            if (frontMaterial.iridescence !== undefined) {
+                gsap.to(frontMaterial, {
+                    iridescence: isDrawn ? 0.6 : 0.3,
+                    duration: 0.5
+                });
+            }
+        }
+        
+        if (backMaterial) {
+            gsap.to(backMaterial, {
+                envMapIntensity: isDrawn ? 2.5 : 1.5,
+                duration: 0.5
+            });
+        }
+    }
 }
