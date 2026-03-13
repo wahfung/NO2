@@ -66,7 +66,9 @@ export function createCardRing(scene) {
         // Or just lookAt(0,0,0) and then flip if needed.
         cardMesh.lookAt(0, 0, 0);
 
-        // Store data in userdata for raycasting
+        cardMesh.castShadow = true;
+        cardMesh.receiveShadow = true;
+
         cardMesh.userData = {
             id: index,
             name: cardData.name,
