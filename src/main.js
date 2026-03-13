@@ -1,7 +1,7 @@
 import { setupScene } from './scene.js';
 import { createCardRing } from './cards.js';
 import { setupVision } from './vision.js';
-import { updateInteraction } from './interaction.js';
+import { updateInteraction, setDynamicLight } from './interaction.js';
 
 async function init() {
     // 1. Setup UI
@@ -24,10 +24,13 @@ async function init() {
     document.body.appendChild(cursor);
 
     // 2. Setup 3D Scene
-    const { scene, camera, renderer } = setupScene();
+    const { scene, camera, renderer, mainLight, fillLight, rimLight, dynamicLight } = setupScene();
     window.sceneInstance = scene; // Global ref for interaction.js
 
-    // 3. Create Cards
+    // 设置动态光源引用
+    setDynamicLight(dynamicLight);
+
+    // 3. Create Cards with PBR materials
     const cardGroup = createCardRing(scene);
     window.cardGroupInstance = cardGroup;
 
@@ -41,8 +44,26 @@ async function init() {
     }
 
     // 5. Animation Loop
+    let lastTime = performance.now();
+
     function animate() {
         requestAnimationFrame(animate);
+
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+
+        // 更新光源动画（营造动态环境氛围）
+        if (mainLight) {
+            mainLight.intensity = 2.0 + Math.sin(currentTime * 0.001) * 0.3;
+        }
+        if (rimLight) {
+            rimLight.position.x = Math.sin(currentTime * 0.0005) * 5;
+            rimLight.intensity = 1.2 + Math.cos(currentTime * 0.002) * 0.4;
+        }
+        if (fillLight) {
+            fillLight.intensity = 0.8 + Math.sin(currentTime * 0.0015) * 0.2;
+        }
 
         updateInteraction(scene, camera, cardGroup);
 
