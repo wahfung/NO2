@@ -45,15 +45,17 @@ export function createCardRing(scene) {
         frontTexture.colorSpace = THREE.SRGBColorSpace;
 
         const materials = [
-            new THREE.MeshStandardMaterial({ color: 0x222222 }), // right
-            new THREE.MeshStandardMaterial({ color: 0x222222 }), // left
-            new THREE.MeshStandardMaterial({ color: 0x222222 }), // top
-            new THREE.MeshStandardMaterial({ color: 0x222222 }), // bottom
-            new THREE.MeshStandardMaterial({ map: backTexture }),  // 4: front (+Z) -> Shows Back Pattern in Ring
-            new THREE.MeshStandardMaterial({ map: frontTexture }), // 5: back (-Z) -> Shows Tarot Image when Flipped
+            new THREE.MeshStandardMaterial({ color: 0x444444, emissive: 0x111111 }),
+            new THREE.MeshStandardMaterial({ color: 0x444444, emissive: 0x111111 }),
+            new THREE.MeshStandardMaterial({ color: 0x444444, emissive: 0x111111 }),
+            new THREE.MeshStandardMaterial({ color: 0x444444, emissive: 0x111111 }),
+            new THREE.MeshStandardMaterial({ map: backTexture, emissive: 0x221133, emissiveIntensity: 0.2, roughness: 0.3 }),
+            new THREE.MeshStandardMaterial({ map: frontTexture, emissive: 0x111122, emissiveIntensity: 0.15, roughness: 0.3 }),
         ];
 
         const cardMesh = new THREE.Mesh(geometry, materials);
+        cardMesh.castShadow = true;
+        cardMesh.receiveShadow = true;
 
         // Position
         const x = Math.sin(angle) * RADIUS;
