@@ -54,6 +54,8 @@ export function createCardRing(scene) {
         ];
 
         const cardMesh = new THREE.Mesh(geometry, materials);
+        cardMesh.castShadow = true;
+        cardMesh.receiveShadow = true;
 
         // Position
         const x = Math.sin(angle) * RADIUS;

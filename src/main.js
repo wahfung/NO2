@@ -2,6 +2,7 @@ import { setupScene } from './scene.js';
 import { createCardRing } from './cards.js';
 import { setupVision } from './vision.js';
 import { updateInteraction } from './interaction.js';
+import { createEnvironment, updateEnvironment } from './environment.js';
 
 async function init() {
     // 1. Setup UI
@@ -27,11 +28,14 @@ async function init() {
     const { scene, camera, renderer } = setupScene();
     window.sceneInstance = scene; // Global ref for interaction.js
 
-    // 3. Create Cards
+    // 3. Create Environment (Table, Candles, Crystal Ball)
+    const environment = createEnvironment(scene);
+
+    // 4. Create Cards
     const cardGroup = createCardRing(scene);
     window.cardGroupInstance = cardGroup;
 
-    // 4. Setup Vision
+    // 5. Setup Vision
     try {
         await setupVision();
         loading.style.opacity = 0;
@@ -40,9 +44,14 @@ async function init() {
         console.error(err);
     }
 
-    // 5. Animation Loop
+    // 6. Animation Loop
     function animate() {
         requestAnimationFrame(animate);
+
+        const time = performance.now() * 0.001;
+
+        // 更新环境动画（蜡烛火焰、水晶球等）
+        updateEnvironment(environment, time);
 
         updateInteraction(scene, camera, cardGroup);
 
