@@ -1,13 +1,11 @@
 import { setupScene } from './scene.js';
 import { createCardRing } from './cards.js';
 import { setupVision } from './vision.js';
-import { updateInteraction } from './interaction.js';
+import { updateInteraction, initSpreadManager } from './interaction.js';
 
 async function init() {
-    // 1. Setup UI
     const loading = document.getElementById('loading');
 
-    // Create Visual Cursor
     const cursor = document.createElement('div');
     cursor.id = 'cursor-visual';
     cursor.style.position = 'absolute';
@@ -20,18 +18,33 @@ async function init() {
     cursor.style.pointerEvents = 'none';
     cursor.style.zIndex = '1000';
     cursor.style.transition = 'background-color 0.2s, opacity 0.2s';
-    cursor.style.opacity = '0'; // Hidden by default until hand detected
+    cursor.style.opacity = '0';
     document.body.appendChild(cursor);
 
-    // 2. Setup 3D Scene
-    const { scene, camera, renderer } = setupScene();
-    window.sceneInstance = scene; // Global ref for interaction.js
+    const secondCursor = document.createElement('div');
+    secondCursor.id = 'cursor-visual-2';
+    secondCursor.style.position = 'absolute';
+    secondCursor.style.width = '20px';
+    secondCursor.style.height = '20px';
+    secondCursor.style.borderRadius = '50%';
+    secondCursor.style.border = '2px solid cyan';
+    secondCursor.style.backgroundColor = 'cyan';
+    secondCursor.style.transform = 'translate(-50%, -50%)';
+    secondCursor.style.pointerEvents = 'none';
+    secondCursor.style.zIndex = '1000';
+    secondCursor.style.transition = 'background-color 0.2s, opacity 0.2s';
+    secondCursor.style.opacity = '0';
+    document.body.appendChild(secondCursor);
 
-    // 3. Create Cards
+    const { scene, camera, renderer } = setupScene();
+    window.sceneInstance = scene;
+    window.cameraInstance = camera;
+
     const cardGroup = createCardRing(scene);
     window.cardGroupInstance = cardGroup;
 
-    // 4. Setup Vision
+    initSpreadManager(scene, cardGroup);
+
     try {
         await setupVision();
         loading.style.opacity = 0;
@@ -40,7 +53,6 @@ async function init() {
         console.error(err);
     }
 
-    // 5. Animation Loop
     function animate() {
         requestAnimationFrame(animate);
 

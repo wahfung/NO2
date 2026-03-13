@@ -1,9 +1,9 @@
 body {
   margin: 0;
   overflow: hidden;
-  background-color: #050510; /* Deep dark blue/black */
+  background-color: #050510;
   font-family: 'Times New Roman', serif;
-  color: #d4af37; /* Gold */
+  color: #d4af37;
 }
 
 #app {
@@ -35,4 +35,44 @@ canvas {
   opacity: 0.8;
   pointer-events: none;
   text-shadow: 0 0 10px rgba(0,0,0,0.8);
+}
+
+#spread-indicator {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  opacity: 0;
+  transition: opacity 0.5s;
+  text-shadow: 0 0 15px rgba(212, 175, 55, 0.8);
+  pointer-events: none;
+}
+
+.spread-label {
+  position: absolute;
+  color: #d4af37;
+  font-size: 14px;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+.gesture-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  color: cyan;
+  text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  pointer-events: none;
+  opacity: 0;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
 }
